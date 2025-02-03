@@ -84,22 +84,35 @@ local function RepairVehicle()
                     combat = true
                 },
             }) then
-                -- Complete repair
-                SetVehicleFixed(vehicle)
-                SetVehicleDeformationFixed(vehicle)
-                SetVehicleUndriveable(vehicle, false)
-                SetVehicleDirtLevel(vehicle, 0.0)
-                WashDecalsFromVehicle(vehicle, 1.0)
-                
-                TriggerServerEvent('vehicle_repair:payRepair', repairCost)
-                
-                lib.notify({
-                    title = 'Vehicle Repaired',
-                    description = string.format('Paid $%d for repairs', repairCost),
-                    type = 'success',
-                    position = Config.NotifPosition,
-                    duration = 5000
-                })
+                -- Double check money before completing repair
+                ESX.TriggerServerCallback('vehicle_repair:checkMoney', function(stillHasEnough)
+                    if stillHasEnough then
+                        -- Complete repair
+                        SetVehicleFixed(vehicle)
+                        SetVehicleDeformationFixed(vehicle)
+                        SetVehicleUndriveable(vehicle, false)
+                        SetVehicleDirtLevel(vehicle, 0.0)
+                        WashDecalsFromVehicle(vehicle, 1.0)
+                        
+                        TriggerServerEvent('vehicle_repair:payRepair', repairCost)
+                        
+                        lib.notify({
+                            title = 'Vehicle Repaired',
+                            description = string.format('Paid $%d for repairs', repairCost),
+                            type = 'success',
+                            position = Config.NotifPosition,
+                            duration = 5000
+                        })
+                    else
+                        lib.notify({
+                            title = 'Repair Failed',
+                            description = 'Insufficient funds to complete repair',
+                            type = 'error',
+                            position = Config.NotifPosition,
+                            duration = 5000
+                        })
+                    end
+                end, repairCost)
             else
                 lib.notify({
                     title = 'Repair Cancelled',
